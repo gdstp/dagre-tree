@@ -13,6 +13,7 @@ import dagre from 'dagre';
 import useStore from './store';
 import { CustomNode } from './controls/CustomNode';
 import { CustomEdge } from './controls/CustomEdge';
+import { faker } from '@faker-js/faker';
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -55,7 +56,15 @@ const getLayoutedElements = (nodes: Node<NodeTypes>[], edges: Edge[]) => {
 };
 
 const LayoutFlow = () => {
-  const { edges, nodes, setEdges, onNodesChange, onEdgesChange } = useStore();
+  const {
+    edges,
+    nodes,
+    setEdges,
+    onNodesChange,
+    onEdgesChange,
+    hasStoredLayout,
+    onReset,
+  } = useStore();
   const nodeTypes = useMemo(() => ({ customNode: CustomNode }), []);
   const edgeTypes = useMemo(() => ({ special: CustomEdge }), []);
 
@@ -80,12 +89,38 @@ const LayoutFlow = () => {
     });
   }, [nodes, edges]);
 
+  const onNewNode = useCallback(() => {
+    useStore.setState({
+      nodes: [
+        ...nodes,
+        {
+          id: (nodes.length + 1).toString(),
+          data: {
+            label: faker.name.firstName(),
+            files: faker.datatype.number(),
+          },
+          type: 'customNode',
+          position: { x: 0, y: 0 },
+        },
+      ],
+    });
+  }, []);
+
+  const onResetOrganize = () => {
+    onReset();
+    window.location.reload();
+  };
+
   useEffect(() => {
-    !useStore.getState().hasStoredLayout && onLayout();
+    !hasStoredLayout && onLayout();
   }, []);
 
   return (
     <div className='layoutflow'>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={onNewNode}>Add Node</button>
+        <button onClick={onResetOrganize}>Reset</button>
+      </div>
       <ReactFlow
         nodes={nodes}
         edges={edges}
